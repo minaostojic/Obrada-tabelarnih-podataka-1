@@ -6,7 +6,7 @@ class MainClass {
   {
     public string reziser;
     public string[] zanrovi;
-    public int[] br_filmova;
+    public int[] br_filmovi;
   }
 
   static void Ucitavanje_podataka (ref string[,] matrica)
@@ -14,7 +14,6 @@ class MainClass {
     if (File.Exists("ulazni_podaci.csv"))
     {
       StreamReader podaci = new StreamReader("ulazni_podaci.csv");
-      //string[,] matrica = new string[1000,6];
       int brojac=0;
       string s = podaci.ReadLine();
       while (!podaci.EndOfStream)      
@@ -28,6 +27,7 @@ class MainClass {
         }
         brojac++;
       }
+      podaci.Close();
     }
     else Console.Error.WriteLine("Greska! Ne postoji datoteka ulazni_podaci");
   }
@@ -43,73 +43,106 @@ class MainClass {
     return zanr_niz;
   }
 
-   //Metoda vraca indeks vec unetog rezisera, koji se trazi
-  static int Indeks_trazenog_rezisera (string reziser,Podaci_o_filmovima_rezisera[] strukture)
+  //Metoda Leksikografski sortira niz stringova
+  public static void LeksikografskiPoredak(ref string[] a)
   {
-    for (int i=0; i<strukture.Length; i++)
-      if (reziser == strukture[i].reziser) return i;
-    return -1;
-  }
-
-  //Metoda za proveru da li zanr matrice postoji u zeljenom nizu
-  static bool Postoji_zanr_u_nizu (string[] zanr_niz, string zanr)
-  {
-    for(int i=0;i<zanr_niz.Length;i++)
-      if(zanr==zanr_niz[i])return true;
-    return false;
-  }
-
-  static bool Postoji_zanr_od_tog_rezisera(string zanr,string[,] podaci_matrica)
-  {
-    for(int i=0;i<podaci_matrica.Length;i++)
+    bool promena = true;
+    while(promena)
     {
-      if(podaci_matrica[i,2]==zanr)return true;
+      promena = false;
+      for(int i=0;i < a.Length-1; i++)
+      {
+        if(a[i].CompareTo(a[i+1])==1)
+        {
+          a[i] = Zamena(ref  a[i+1], a[i]);
+          promena = true;
+        }
+      }
     }
-    return false;
+  }
+  public static string Zamena(ref string a, string b)
+  {
+    string j = a;
+    a = b;
+    return j; 
   }
 
-  static Podaci_o_filmovima_rezisera[] Vec_postoji_reziser(Podaci_o_filmovima_rezisera[] reziser_zanrovil, string reziseri,int brojac_struktura)
+  static void Postoji_zanr_od_tog_rezisera(Podaci_o_filmovima_rezisera reziser_zanrovi ,string[] niz_ulazni_zanrovi) //proveriti zagrade
+  {
+    for(int i=0;i<niz_ulazni_zanrovi.Length;i++)
+    {
+      for (int j=0; j<reziser_zanrovi.zanrovi.Length;j++)
+      {
+        if(niz_ulazni_zanrovi[i]==reziser_zanrovi.zanrovi[j])
+        {
+          reziser_zanrovi.br_filmovi[j]++;
+        }
+      }
+    }
+  }
+  
+  //Metoda koja proverava da li reziser vec postoji 
+  static int Vec_postoji_reziser(Podaci_o_filmovima_rezisera[] reziser_zanrovi, string reziser,int brojac_struktura)
   {
     for(int i=0;i<brojac_struktura;i++)
     {
-      if(reziseri==reziser_zanrovi[i].reziser)
+      if(reziser==reziser_zanrovi[i].reziser)return i;
     }
+    return -1;
   }
 
+  static bool Poredjenje_sa_konzolom(string zanr_niz,string[] niz_ulazni_zanrovi)
+  {
+      for (int j=0; j<niz_ulazni_zanrovi.Length;j++)
+      {
+        if(zanr_niz==niz_ulazni_zanrovi[j])return true;
+      }
+      return false;
+  }
+  
   //Glavna metoda obrade: izdvajaju se reziseri, njihovi zanrovi i broj zanrova
-  static Podaci_o_filmovima_rezisera[] Izdvajanje_zanrova_filmova_sa_reziserima (string[,] podaci_matrica, int[] zanr_niz)
+  static Podaci_o_filmovima_rezisera[] Izdvajanje_zanrova_filmova_sa_reziserima (string[,] podaci_matrica, string[] zanr_niz)
   {
     Podaci_o_filmovima_rezisera[] reziser_zanrovi = new Podaci_o_filmovima_rezisera[1000];
     int brojac_struktura = 0; //brojac razlicitih rezisera(brojac-1 dalje u programu)
-    int indeks_rezisera = 0;
-    string[] niz;
+    string[] niz_ulazni_zanrovi;
     
     for (int i=0; i<podaci_matrica.GetLength(0); i++)
     {
-      niz = podaci_matrica[i,2].Split("|");
-      indeks_rezisera = Indeks_trazenog_rezisera(podaci_matrica[i,4],reziser_zanrovi);
-      if (indeks_rezisera != -1)
+      niz_ulazni_zanrovi = podaci_matrica[i,2].Split("|");
+      int indeks=Vec_postoji_reziser(reziser_zanrovi,podaci_matrica[i,4],brojac_struktura);
+      if(indeks!=-1)
       {
-        for(int j=0;j<zanr_niz.Length;j++)
+        for(int k=0; k<zanr_niz.Length; k++)
         {
-
+          if(Poredjenje_sa_konzolom(zanr_niz[k],niz_ulazni_zanrovi))
+          {
+             Postoji_zanr_od_tog_rezisera(reziser_zanrovi[indeks],niz_ulazni_zanrovi); 
+          }
         }
       }
       else
       {
-        reziser_filmovi[brojac_struktura].reziser = podaci_matrica[i,4];
-        brojaci_filmova[brojac_struktura] = 1;
-        Array.Resize(ref reziser_filmovi[brojac_struktura].filmovi, 1);
-        reziser_filmovi[brojac_struktura].filmovi[0] = film;
-        //brojaci_filmova[brojac_struktura]=0; unet je prvi film u novu strukturu;
-        Array.Resize(ref reziser_filmovi[brojac_struktura].zarade, 1);
-        reziser_filmovi[brojac_struktura].zarade[0] = zarada;
-        reziser_filmovi[brojac_struktura].ukupna_zarada = 0;
+        int brojac=0;
+        reziser_zanrovi[brojac_struktura].br_filmovi= new int [zanr_niz.Length];
+        reziser_zanrovi[brojac_struktura].zanrovi= new string [zanr_niz.Length];
+        for(int k=0; k<zanr_niz.Length; k++)
+        {
+          if(Poredjenje_sa_konzolom(zanr_niz[k],niz_ulazni_zanrovi))
+          {
+            reziser_zanrovi[brojac_struktura].reziser = podaci_matrica[i,4];
+            reziser_zanrovi[brojac_struktura].zanrovi[brojac] = zanr_niz[k];
+            reziser_zanrovi[brojac_struktura].br_filmovi[brojac] = 1;
+            brojac++;
+          }
+        }
+        Array.Resize(ref reziser_zanrovi[brojac_struktura].br_filmovi,brojac);
+        Array.Resize(ref reziser_zanrovi[brojac_struktura].zanrovi,brojac);
         brojac_struktura++;
       }
     }
-    Array.Resize(ref reziser_filmovi,brojac_struktura);
-    return reziser_filmovi;
+    Array.Resize(ref reziser_zanrovi,brojac_struktura);
+    return reziser_zanrovi;
   }
 
   static void Ispis_niza_struktura(Podaci_o_filmovima_rezisera[] niz)
@@ -117,14 +150,20 @@ class MainClass {
     StreamWriter ispis_provera = new StreamWriter("ispis_provera.txt");
     for (int i=0; i<niz.Length; i++)
     {
-      ispis_provera.Write(niz[i].reziser);
+      ispis_provera.Write(niz[i].reziser+" ");
+      Console.Write(niz[i].reziser+" ");
       for (int j=0; j<niz[i].zanrovi.Length; j++)
-        ispis_provera.Write(niz[i].zanrovi[j]+" | "+niz[i].br_filmova[j]);
+      {
+        ispis_provera.Write(niz[i].zanrovi[j]+" | "+niz[i].br_filmovi[j]+" ");
+        Console.Write(niz[i].zanrovi[j]+" | "+niz[i].br_filmovi[j]+" ");
+      }
       ispis_provera.WriteLine();
+      Console.WriteLine();
     }
+    ispis_provera.Close();
   }
 
-  static void Ispis_matrice_provera (int[,] matrica)
+  static void Ispis_matrice_provera (string[,] matrica)
   {
     for (int i=0; i<matrica.GetLength(0); i++)
     {
@@ -138,8 +177,8 @@ class MainClass {
   public static void Main (string[] args) {
     string[,] podaci_matrica = new string[1000,6];
     Ucitavanje_podataka(ref podaci_matrica);
-    int[,] zanr_niz = Unos_zanrova();
-    Ispis_matrice_provera(period_matrica);
+    string[] zanr_niz = Unos_zanrova();
+    //Ispis_matrice_provera(podaci_matrica);
     Podaci_o_filmovima_rezisera[] niz_provera = Izdvajanje_zanrova_filmova_sa_reziserima(podaci_matrica,zanr_niz);
     Ispis_niza_struktura(niz_provera);
   }
